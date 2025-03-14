@@ -86,6 +86,7 @@ random_updown_count = (-3,-2)
 random_up = 5
 random_down = 5
 
+special_attack = {"s" : 4}
 # 初始技能冷卻時間
 skill_cooldowns = {
     "home":250,
@@ -186,6 +187,7 @@ async def move_player():
     global switch_down_count, switch_up_count
     num_last_moves = 0
     last_px, last_py =  px, py
+    last_special_attack = 0  # 記錄特殊攻擊的上次使用時間
     
     while True:
         if not paused:
@@ -255,7 +257,16 @@ async def move_player():
             if py > py_bottom:
                 switch_up_count += 1
 
-            await attack()
+            # 檢查是否可以使用特殊攻擊
+            special_key, special_cooldown = list(special_attack.items())[0]
+            time_since_special = current_time - last_special_attack
+            if time_since_special >= special_cooldown:
+                print(f"使用特殊攻擊 {special_key}")
+                await attack(attack_command=special_key)
+                last_special_attack = current_time
+            else:
+                await attack(attack_command="default")
+            
             await asyncio.sleep(0.5)
 
             
