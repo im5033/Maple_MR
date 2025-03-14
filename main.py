@@ -78,7 +78,7 @@ volume = 0.1  # 預設音量（10%）
 attempts = 0 # 解輪失敗次數
 Mage = False
 use_skill = True 
-px_left, px_right = 50, 140 
+px_left, px_right = 45, 140 
 py_top, py_bottom = 40, 45
 random_direction = 1 / (px_right - px_left + random.randint(10, 20))  # 隨機決定人物往左或右方向移動的機率
 switch_down_count, switch_up_count = -3, -3 # 調大可以不上下跳
@@ -86,7 +86,7 @@ random_updown_count = (-3,-2)
 random_up = 5
 random_down = 5
 
-special_attack = {"s" : 4}
+special_attack = {"s" : 6 }
 # 初始技能冷卻時間
 skill_cooldowns = {
     "home":250,
@@ -265,7 +265,7 @@ async def move_player():
                 await attack(attack_command=special_key)
                 last_special_attack = current_time
             else:
-                await attack(attack_command="default")
+                await attack()
             
             await asyncio.sleep(0.5)
 
@@ -605,7 +605,6 @@ async def detail_rune():
     global attempts, rune_buff_location
     
     while attempts <= 3 :
-        await asyncio.sleep(0.2)
         send_command("space")
         await asyncio.sleep(0.2)
 
@@ -614,7 +613,7 @@ async def detail_rune():
         if len(data) == 4:
             directions = [direction for direction, _ in data]
             print(f"Directions: {directions}")
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
             for d in directions:
                 send_command(d)
                 await asyncio.sleep(0.2)
@@ -636,19 +635,25 @@ async def detail_rune():
                 pygame.mixer.music.set_volume(volume)  # 設定音量
             await asyncio.sleep(1)
         else:
-            print("Rune unidentifiable. Trying again...")
-            cv2.imwrite(f"rune/fail/screenshot_{str(int(time.time()))}.png", screenshot)
-            pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
-            pygame.mixer.music.play()  # 播放音樂
-            pygame.mixer.music.set_volume(volume)  # 設定音量
-            await asyncio.sleep(3)
-            attempts += 1
-            if attempts > 3:
-                send_command("scroll lock")
-                attempts = 0
-                await asyncio.sleep(5)
-                await exit_cashshop()
+            if rx == -1 and ry == -1:
+                print("Player not standing at Rune. Trying again...")
+                await asyncio.sleep(0.5)
+                move_to_point(rx, ry, True)
+                continue
+            else:
+                print("Rune unidentifiable. Trying again...")
+                cv2.imwrite(f"rune/fail/screenshot_{str(int(time.time()))}.png", screenshot)
+                pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
+                pygame.mixer.music.play()  # 播放音樂
+                pygame.mixer.music.set_volume(volume)  # 設定音量
                 await asyncio.sleep(3)
+                attempts += 1
+                if attempts > 3:
+                    send_command("scroll lock")
+                    attempts = 0
+                    await asyncio.sleep(5)
+                    await exit_cashshop()
+                    await asyncio.sleep(3)
 
 async def exit_cashshop():
         hwnd = win32gui.FindWindow(None, window_name)
