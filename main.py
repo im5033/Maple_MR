@@ -13,6 +13,7 @@ import pygame
 import concurrent.futures
 from collections import deque
 from rune_slover import find_arrow_directions
+from ai_rune import ai_slove
 
 window_name = "MapleStory"
 # 取得腳本運行目錄
@@ -617,7 +618,6 @@ async def detail_rune():
             for d in directions:
                 send_command(d)
                 await asyncio.sleep(0.2)
-            
             await asyncio.sleep(1)
 
             check_screenshot = capture_window(window_name)
@@ -643,17 +643,33 @@ async def detail_rune():
             else:
                 print("Rune unidentifiable. Trying again...")
                 cv2.imwrite(f"rune/fail/screenshot_{str(int(time.time()))}.png", screenshot)
-                pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
-                pygame.mixer.music.play()  # 播放音樂
-                pygame.mixer.music.set_volume(volume)  # 設定音量
-                await asyncio.sleep(3)
-                attempts += 1
-                if attempts > 3:
-                    send_command("scroll lock")
-                    attempts = 0
-                    await asyncio.sleep(5)
-                    await exit_cashshop()
+                directions = ai_slove(screenshot)
+                if len(directions) == 4:
+                    print(f"Directions: {directions}")
+                    await asyncio.sleep(0.5)
+                    for d in directions:
+                        send_command(d)
+                        await asyncio.sleep(0.2)
+                    await asyncio.sleep(1)
+                    check_screenshot = capture_window(window_name)
+                    rune_buff_location, _ = match_template(check_screenshot, templates["rune_buff"])
+                    if rune_buff_location != (-1, -1):
+                        print("Rune has been solved.")
+                        cv2.imwrite(f"rune/screenshot_{str(int(time.time()))}.png", screenshot)
+                        attempts = 0
+                        break
+                else:
+                    pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
+                    pygame.mixer.music.play()  # 播放音樂
+                    pygame.mixer.music.set_volume(volume)  # 設定音量
                     await asyncio.sleep(3)
+                    attempts += 1
+                    if attempts > 3:
+                        send_command("scroll lock")
+                        attempts = 0
+                        await asyncio.sleep(5)
+                        await exit_cashshop()
+                        await asyncio.sleep(3)
 
 async def exit_cashshop():
         hwnd = win32gui.FindWindow(None, window_name)

@@ -120,10 +120,11 @@ def find_arrow_directions(img, debug=False):
 def solve_rune_raw():
     #assumes user is already at rune
     output = "A.png"
-    for filename in os.listdir(r"C:\Users\Administrator\Documents\test\A"):
+    for filename in os.listdir(r"C:\Users\MR\Documents\auto_maple_MR"):
         if filename.lower().endswith((".png", ".jpg")):  # 過濾圖片格式
-            output = os.path.join(r"C:\Users\Administrator\Documents\test\A", filename)
+            output = os.path.join(r"C:\Users\MR\Documents\auto_maple_MR", filename)
             data = find_arrow_directions(cv.imread(output))
+            print(data)
             if len(data) == 4:
                 directions = [direction for direction, _ in data]
                 print(f"{filename} Directions: {directions}")
