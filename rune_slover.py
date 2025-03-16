@@ -119,49 +119,15 @@ def find_arrow_directions(img, debug=False):
 
 def solve_rune_raw():
     #assumes user is already at rune
-    attempts = 0
-    while attempts <= 3 :
-        # npcChatKey = self.config['NPC/Gather']
-        # press(npcChatKey, 1)
-        # time.sleep(0.2)
-
-        # with mss.mss() as sct:
-            # The screen part to capture
-            # window = config.capture.window
-        output = "A.png"
-        for filename in os.listdir(r"C:\Users\Administrator\Documents\test\A"):
-            if filename.lower().endswith((".png", ".jpg")):  # 過濾圖片格式
-                output = os.path.join(r"C:\Users\Administrator\Documents\test\A", filename)
-            # sct_img = sct.grab(window)
-            # mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
-
-                data = find_arrow_directions(cv.imread(output))
-                if len(data) == 4:
-                    directions = [direction for direction, _ in data]
-                    print(f"{filename} Directions: {directions}")
-                    time.sleep(1)
-        #     for d, _ in directions:
-        #         press(d, 1)
-            
-        #     time.sleep(1)
-        #     rune_location = get_rune_location(self)
-        #     if rune_location is None:
-        #         print("Rune has been solved.")
-        #         time.sleep(1)
-        #         return True
-        #     else:
-        #         print("Trying again...")
-        # else:
-        #     print("Rune unidentifiable. Trying again...")
-        #     press(npcChatKey, 1)
-        #     time.sleep(1.5)
-        #     attempts += 1
-        #     if attempts > 3:
-        #         enterCashshop(self)
-        #         attempts = 0
-        #         time.sleep(0.5)
-        #         return False
-        attempts = 6
+    output = "A.png"
+    for filename in os.listdir(r"C:\Users\Administrator\Documents\test\A"):
+        if filename.lower().endswith((".png", ".jpg")):  # 過濾圖片格式
+            output = os.path.join(r"C:\Users\Administrator\Documents\test\A", filename)
+            data = find_arrow_directions(cv.imread(output))
+            if len(data) == 4:
+                directions = [direction for direction, _ in data]
+                print(f"{filename} Directions: {directions}")
+                time.sleep(1)
     return False
 
 if __name__ == "__main__":
