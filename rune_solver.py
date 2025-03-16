@@ -128,8 +128,6 @@ def solve_rune_raw():
             if len(data) == 4:
                 directions = [direction for direction, _ in data]
                 print(f"{filename} Directions: {directions}")
-                time.sleep(1)
-    return False
 
 if __name__ == "__main__":
     solve_rune_raw()

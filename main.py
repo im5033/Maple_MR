@@ -2,7 +2,7 @@ import cv2
 import os
 import numpy as np
 import mss
-import win32gui
+import win32gui # type: ignore
 import serial
 import time
 import keyboard

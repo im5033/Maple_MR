@@ -47,17 +47,21 @@ def ai_slove(img):
     labels = [obj[0] for obj in objects_sorted]
     return labels
 
-# 測試圖片（請自行修改圖片路徑）
-image_path = "Q.jpg"
-# 讀取圖片
-img = cv2.imread(image_path)
-objects = detect_objects(img)
-# 按照 x1 座標進行排序，從左到右
-objects_sorted = sorted(objects, key=lambda obj: obj[1])
-# 輸出結果
-# for obj in objects_sorted:
-#     print(f"Label: {obj[0]}, BBox: ({obj[1]}, {obj[2]}, {obj[3]}, {obj[4]})")
-# 提取標籤並整理成列表
-labels = [obj[0] for obj in objects_sorted]
-# 輸出整理後的結果
-print(labels)
+def solve_rune_raw():
+    # 測試圖片（請自行修改圖片路徑）
+    image_path = "Q.jpg"
+    # 讀取圖片
+    img = cv2.imread(image_path)
+    objects = detect_objects(img)
+    # 按照 x1 座標進行排序，從左到右
+    objects_sorted = sorted(objects, key=lambda obj: obj[1])
+    # 輸出結果
+    # for obj in objects_sorted:
+    #     print(f"Label: {obj[0]}, BBox: ({obj[1]}, {obj[2]}, {obj[3]}, {obj[4]})")
+    # 提取標籤並整理成列表
+    labels = [obj[0] for obj in objects_sorted]
+    # 輸出整理後的結果
+    print(labels)
+
+if __name__ == "__main__":
+    solve_rune_raw()
