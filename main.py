@@ -12,7 +12,7 @@ import pyautogui
 import pygame
 import concurrent.futures
 from collections import deque
-from rune_slover import find_arrow_directions
+from rune_solver import find_arrow_directions
 from ai_rune import ai_slove
 
 window_name = "MapleStory"
@@ -641,7 +641,7 @@ async def detail_rune():
                 move_to_point(rx, ry, True)
                 continue
             else:
-                print("Rune unidentifiable. Trying again...")
+                print("Use AI to solved rune...")
                 cv2.imwrite(f"rune/fail/screenshot_{str(int(time.time()))}.png", screenshot)
                 directions = ai_slove(screenshot)
                 if len(directions) == 4:
@@ -659,6 +659,7 @@ async def detail_rune():
                         attempts = 0
                         break
                 else:
+                    print("Rune unidentifiable. Trying again...")
                     pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
                     pygame.mixer.music.play()  # 播放音樂
                     pygame.mixer.music.set_volume(volume)  # 設定音量
