@@ -610,9 +610,12 @@ async def detail_rune():
         await asyncio.sleep(0.2)
 
         screenshot = capture_window(window_name)
-        data = find_arrow_directions(screenshot)
-        if len(data) == 4:
-            directions = [direction for direction, _ in data]
+        # 用OpenCV識別
+        # data = find_arrow_directions(screenshot)
+        # directions = [direction for direction, _ in data]
+        # 用AI識別
+        directions = ai_slove(screenshot)
+        if len(directions) == 4:
             print(f"Directions: {directions}")
             await asyncio.sleep(0.5)
             for d in directions:
