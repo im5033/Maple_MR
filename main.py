@@ -82,10 +82,11 @@ use_skill = True
 px_left, px_right = 45, 140 
 py_top, py_bottom = 40, 45
 random_direction = 1 / (px_right - px_left + random.randint(10, 20))  # 隨機決定人物往左或右方向移動的機率
-switch_down_count, switch_up_count = -3, -3 # 調大可以不上下跳
-random_updown_count = (-3,-2) 
-random_up = 5
-random_down = 5
+switch_down_count, switch_up_count = -6, -6 # 初始的上下計數器，調大可以不上下跳
+random_up_count = (-7,-2) # 每次重製上跳時的隨機值範圍
+random_down_count = (-7,-5) # 每次重製下跳時的隨機值範圍
+random_up = 0 # 保底數
+random_down = 0 # 保底數
 
 special_attack = {"s" : 6 }
 # 初始技能冷卻時間
@@ -94,6 +95,7 @@ skill_cooldowns = {
     "delete": 250,
     "ctrl": 8,
     "shift": 10,
+    "g": 120
 }
 # skill_cooldowns = {
     # "7": 180,
@@ -115,7 +117,7 @@ pygame.mixer.init()
 # 設定音量
 pygame.mixer.music.set_volume(volume)
 
-time.sleep(2)  # 等待 Arduino 初始化
+time.sleep(0.5)  # 等待 Arduino 初始化
 
 def send_command(command):
     arduino.write(command.encode())  # 發送命令
@@ -221,13 +223,13 @@ async def move_player():
                 print("Left")
                 await asyncio.sleep(0.1)
                 await attack("left")
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.5)
                 continue
             elif px < px_left or random.random() < P:
                 print("Right")
                 await asyncio.sleep(0.1)
                 await attack("right")
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.5)
                 continue
 
             if use_skill:
@@ -257,11 +259,12 @@ async def move_player():
                 switch_down_count += 1
             if py > py_bottom:
                 switch_up_count += 1
+                switch_down_count = random.randint(*random_down_count)
 
             # 檢查是否可以使用特殊攻擊
             special_key, special_cooldown = list(special_attack.items())[0]
             time_since_special = current_time - last_special_attack
-            if time_since_special >= special_cooldown:
+            if time_since_special >= special_cooldown and not used_skill:
                 print(f"使用特殊攻擊 {special_key}")
                 await attack(attack_command=special_key)
                 last_special_attack = current_time
@@ -280,20 +283,26 @@ async def move_player():
                 await asyncio.sleep(0.05)
                 send_command("down_u")
                 await asyncio.sleep(1)  # 非同步等待
-                switch_down_count = random.randint(*random_updown_count)
+                switch_down_count = random.randint(*random_down_count)
         
             if switch_up_count > (random.random()*random_up):
                 if px_left <= px <= px_right:
                     await asyncio.sleep(0.5)
-                    print("Up")
-                    send_command("x")
+                    if random.random() > 0.8:
+                        print("Special Up")
+                        send_command("up")
+                        await asyncio.sleep(0.05)
+                        send_command("up")
+                    else:
+                        print("Up")
+                        send_command("x")
                     await asyncio.sleep(1)  # 非同步等待
                 else:
                     continue
                 if py > py_bottom :
                     continue
                 else:
-                    switch_up_count = random.randint(*random_updown_count) # 更容易上跳
+                    switch_up_count = random.randint(*random_up_count) # 更容易上跳
 
             print(f"{switch_down_count} {switch_up_count}")
 
@@ -535,7 +544,7 @@ async def move_to_point(current_x, current_y, move_to_rune = False):
         while not current_x == px : # 只有 px = rx 時才停止
             if move_to_rune and rx == -1:
                 return
-            print("X軸移動中")
+            print(f"X軸移動中 : {current_x}")
             if px > current_x:
                 distance = px - current_x
                 if distance >= 20:
@@ -584,7 +593,7 @@ async def move_to_point(current_x, current_y, move_to_rune = False):
         while not (current_y - 1 <= py <= current_y + 1) : # 只有 py = ry 時才停止
             if move_to_rune and ry == -1:
                 return
-            print("Y軸移動中")
+            print(f"Y軸移動中 : {current_y}")
             if py > current_y:
                 send_command("x")
                 await asyncio.sleep(3)  # 非同步等待
@@ -617,16 +626,16 @@ async def detail_rune():
         directions = ai_slove(screenshot)
         if len(directions) == 4:
             print(f"Directions: {directions}")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.8)
             for d in directions:
                 send_command(d)
-                await asyncio.sleep(0.2)
-            await asyncio.sleep(1)
+                await asyncio.sleep(random.uniform(0.2, 0.4))
+            await asyncio.sleep(1.2)
 
             check_screenshot = capture_window(window_name)
-            rune_buff_location, _ = match_template(check_screenshot, templates["rune_buff"])
+            rune_buff_location, _ = match_template(check_screenshot, templates["rune_buff"],0.8)
             if rune_buff_location != (-1, -1):
-                print("Rune has been solved.")
+                print(f"Rune has been solved. Buff at {rune_buff_location}")
                 cv2.imwrite(f"rune/screenshot_{str(int(time.time()))}.png", screenshot)
                 attempts = 0
                 break
@@ -638,42 +647,26 @@ async def detail_rune():
                 pygame.mixer.music.set_volume(volume)  # 設定音量
             await asyncio.sleep(1)
         else:
-            if rx == -1 and ry == -1:
+            if rx != -1 and ry != -1:
                 print("Player not standing at Rune. Trying again...")
                 await asyncio.sleep(0.5)
-                move_to_point(rx, ry, True)
+                await move_to_point(rx, ry, True)
                 continue
             else:
-                print("Use AI to solved rune...")
                 cv2.imwrite(f"rune/fail/screenshot_{str(int(time.time()))}.png", screenshot)
                 directions = ai_slove(screenshot)
-                if len(directions) == 4:
-                    print(f"Directions: {directions}")
-                    await asyncio.sleep(0.5)
-                    for d in directions:
-                        send_command(d)
-                        await asyncio.sleep(0.2)
-                    await asyncio.sleep(1)
-                    check_screenshot = capture_window(window_name)
-                    rune_buff_location, _ = match_template(check_screenshot, templates["rune_buff"])
-                    if rune_buff_location != (-1, -1):
-                        print("Rune has been solved.")
-                        cv2.imwrite(f"rune/screenshot_{str(int(time.time()))}.png", screenshot)
-                        attempts = 0
-                        break
-                else:
-                    print("Rune unidentifiable. Trying again...")
-                    pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
-                    pygame.mixer.music.play()  # 播放音樂
-                    pygame.mixer.music.set_volume(volume)  # 設定音量
+                print("Rune unidentifiable. Trying again...")
+                pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
+                pygame.mixer.music.play()  # 播放音樂
+                pygame.mixer.music.set_volume(volume)  # 設定音量
+                await asyncio.sleep(3)
+                attempts += 1
+                if attempts > 3:
+                    send_command("scroll lock")
+                    attempts = 0
+                    await asyncio.sleep(5)
+                    await exit_cashshop()
                     await asyncio.sleep(3)
-                    attempts += 1
-                    if attempts > 3:
-                        send_command("scroll lock")
-                        attempts = 0
-                        await asyncio.sleep(5)
-                        await exit_cashshop()
-                        await asyncio.sleep(3)
 
 async def exit_cashshop():
         hwnd = win32gui.FindWindow(None, window_name)
