@@ -613,18 +613,29 @@ async def move_to_point(current_x, current_y, move_to_rune = False):
 
 async def detail_rune():
     global attempts, rune_buff_location
-    
-    while attempts <= 3 :
+
+    if rx != -1 and ry != -1:
+        print("Player not standing at Rune. Trying again...")
+        await asyncio.sleep(0.5)
+        await move_to_point(rx, ry, True)
+
+    while attempts <= 2:
         send_command("space")
         await asyncio.sleep(0.2)
 
         screenshot = capture_window(window_name)
-        # 用OpenCV識別
-        # data = find_arrow_directions(screenshot)
-        # directions = [direction for direction, _ in data]
-        # 用AI識別
-        directions = ai_slove(screenshot)
+
+        # 先用 OpenCV 識別
+        directions = [direction for direction, _ in find_arrow_directions(screenshot)]
+
+        # 若 OpenCV 失敗，改用 AI 識別
+        if len(directions) != 4:
+            cv2.imwrite(f"rune/fail/screenshot_{int(time.time())}.png", screenshot)
+            directions = ai_slove(screenshot)  # 用 AI 嘗試
+
+        # 若成功獲得 4 個方向則執行指令
         if len(directions) == 4:
+            cv2.imwrite(f"rune/screenshot_{int(time.time())}.png", screenshot)
             print(f"Directions: {directions}")
             await asyncio.sleep(0.8)
             for d in directions:
@@ -632,41 +643,34 @@ async def detail_rune():
                 await asyncio.sleep(random.uniform(0.2, 0.4))
             await asyncio.sleep(1.2)
 
+            send_command("space")  # 解輪失敗跳脫用的
             check_screenshot = capture_window(window_name)
-            rune_buff_location, _ = match_template(check_screenshot, templates["rune_buff"],0.8)
+            rune_buff_location, _ = match_template(check_screenshot, templates["rune_buff"], 0.8)
+
             if rune_buff_location != (-1, -1):
                 print(f"Rune has been solved. Buff at {rune_buff_location}")
-                cv2.imwrite(f"rune/screenshot_{str(int(time.time()))}.png", screenshot)
                 attempts = 0
                 break
             else:
                 print("Trying again...")
-                cv2.imwrite(f"rune/fail/screenshot_{str(int(time.time()))}.png", screenshot)
-                pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
-                pygame.mixer.music.play()  # 播放音樂
-                pygame.mixer.music.set_volume(volume)  # 設定音量
-            await asyncio.sleep(1)
+                cv2.imwrite(f"rune/fail/screenshot_{int(time.time())}.png", screenshot)
+
         else:
-            if rx != -1 and ry != -1:
-                print("Player not standing at Rune. Trying again...")
-                await asyncio.sleep(0.5)
-                await move_to_point(rx, ry, True)
-                continue
-            else:
-                cv2.imwrite(f"rune/fail/screenshot_{str(int(time.time()))}.png", screenshot)
-                directions = ai_slove(screenshot)
-                print("Rune unidentifiable. Trying again...")
-                pygame.mixer.music.load(rune_fail_sound_path)  # 載入音樂
-                pygame.mixer.music.play()  # 播放音樂
-                pygame.mixer.music.set_volume(volume)  # 設定音量
-                await asyncio.sleep(3)
-                attempts += 1
-                if attempts > 3:
-                    send_command("scroll lock")
-                    attempts = 0
-                    await asyncio.sleep(5)
-                    await exit_cashshop()
-                    await asyncio.sleep(3)
+            print("Rune unidentifiable. Trying again...")
+            pygame.mixer.music.load(rune_fail_sound_path)
+            pygame.mixer.music.play()
+            pygame.mixer.music.set_volume(volume)
+
+        await asyncio.sleep(3)
+        attempts += 1
+
+    if attempts > 2:
+        send_command("scroll lock")
+        attempts = 0
+        await asyncio.sleep(5)
+        await exit_cashshop()
+        await asyncio.sleep(3)
+
 
 async def exit_cashshop():
         hwnd = win32gui.FindWindow(None, window_name)
